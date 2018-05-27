@@ -42,6 +42,20 @@ There are plenty of cases where "native" Docker is perfectly adequate, such as s
 
 All instructions were tested against macOS 10.13 “High Sierra”, VMware Fusion 10, VirtualBox 5.1, and Parallels Desktop 11.
 
+### Prerequisites for VMware
+
+If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), you need to follow these steps first.
+
+1. Install `ovftool` from VMware. This is required in order to convert the image that AWS provides (for VMware ESX/ESXi Server) into a format that is compatible with VMware for Desktop.
+
+1. After installation, you may need to add `ovftool` to your `$PATH`.
+
+    * For macOS:
+
+    ```bash
+    export PATH="/Applications/VMware OVF Tool":$PATH
+    ```
+
   [al2]: https://aws.amazon.com/amazon-linux-2/
   [docker-mac]: https://www.docker.com/docker-mac
   [docker-win]: https://www.docker.com/docker-windows
