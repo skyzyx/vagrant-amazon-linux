@@ -36,6 +36,8 @@ There are a few answers to this:
 
 * **"Native" Docker isn't truly _native_, so much as _invisible_** — For both [Docker for Mac][docker-mac] or [Docker for Windows][docker-win], a miniature Linux VM is spun-up. This is because Docker leverages a feature that is native to the Linux kernel that does not exist natively in Darwin (macOS) or Windows. Since we have to spin-up a Linux VM anyway, why not take advantage and add some shared tooling that can make your team's development experience easier?
 
+There are plenty of cases where "native" Docker is perfectly adequate, such as small projects with single-digit developers. But if you have a team of developers that you are supporting, disk I/O is important, or simply want to experiment with Amazon Linux 2 before pusing to production, the Amazon Linux 2 Vagrant box is intended to simplify your life.
+
 ## Building a New Vagrant Box
 
 All instructions were tested against macOS 10.13 “High Sierra”, VMware Fusion 10, VirtualBox 5.1, and Parallels Desktop 11.
