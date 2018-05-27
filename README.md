@@ -52,9 +52,21 @@ If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), 
 
     * For macOS:
 
-    ```bash
-    export PATH="/Applications/VMware OVF Tool":$PATH
-    ```
+      ```bash
+      export PATH="/Applications/VMware OVF Tool":$PATH
+      ```
+
+    * For Windows:
+
+      ```bash
+      # TBD
+      ```
+
+    * For Linux:
+
+      ```bash
+      # TBD
+      ```
 
   [al2]: https://aws.amazon.com/amazon-linux-2/
   [docker-mac]: https://www.docker.com/docker-mac
