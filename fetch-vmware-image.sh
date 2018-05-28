@@ -12,7 +12,7 @@
 set -euo pipefail
 
 e() {
-  echo -e "  \e[1;32m[install] ==> $@\e[0m";
+echo -e "  \e[1;32m[install] ==> $@\e[0m";
 }
 
 RELEASE=2017.12.0.20180509
@@ -34,15 +34,21 @@ else
 
     cd ./packer_cache/
 
-    e "Downloading and importing Amazon’s GPG signing key...";
-    curl -sSL https://cdn.amazonlinux.com/_assets/11CF1F95C87F5B1A.asc -o amazon-gpg-key.asc;
-    gpg --import amazon-gpg-key.asc;
+    if ! [ -f amazon-gpg-key.asc ]; then
+        e "Downloading and importing Amazon’s GPG signing key...";
+        curl -L https://cdn.amazonlinux.com/_assets/11CF1F95C87F5B1A.asc -o amazon-gpg-key.asc;
+        gpg --import amazon-gpg-key.asc;
+    fi;
 
-    e "Downloading SHA256SUMS.gpg...";
-    curl -sSL https://cdn.amazonlinux.com/os-images/${RELEASE}/vmware/SHA256SUMS.gpg -o SHA256SUMS.gpg;
+    if ! [ -f SHA256SUMS.gpg ]; then
+        e "Downloading SHA256SUMS.gpg...";
+        curl -LO https://cdn.amazonlinux.com/os-images/${RELEASE}/vmware/SHA256SUMS.gpg;
+    fi;
 
-    e "Downloading Amazon Linux 2 image...";
-    curl -LO https://cdn.amazonlinux.com/os-images/${RELEASE}/vmware/${FILENAME};
+    if ! [ -f ${FILENAME} ]; then
+        e "Downloading Amazon Linux 2 image...";
+        curl -LO https://cdn.amazonlinux.com/os-images/${RELEASE}/vmware/${FILENAME};
+    fi;
 
     e "Verifying that SHA256SUMS was signed by the Amazon Linux GPG key...";
     if gpg --verify SHA256SUMS.gpg; then
@@ -56,26 +62,12 @@ else
             ovftool --overwrite --allowExtraConfig ${FILENAME} "${FILENAME%.*}.ovf";
             sed -i "s/VirtualSCSI/lsilogic/" "${FILENAME%.*}.ovf";
             openssl sha1 "${FILENAME%.*}-disk1.vmdk" "${FILENAME%.*}.ovf" | tee "${FILENAME%.*}.mf";
-            ovftool --targetType=VMX "${FILENAME%.*}.ovf" "${FILENAME%.*}.vagrant.vmx";
-            mkdir -p "${FILENAME%.*}.vmwarevm";
+            ovftool --targetType=VMX "${FILENAME%.*}.ovf" "amzn2.vagrant.vmx";
+            mkdir -p "amzn2.vmwarevm";
 
             e "Cleaning up..."
-            mv "${FILENAME%.*}.vagrant"* "${FILENAME%.*}.vmwarevm/";
-            rm -f "${FILENAME%.*}"{-disk1.vmdk,.ova,.ovf,.mf};
-
-            e "Patching the virtual machine definition for Desktop use..."
-            sed -i -r "s/^displayname = .*$/displayname = \"Amazon Linux 2\"/" "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            sed -i -r "s/^virtualhw.version = .*$/virtualhw.version = \"14\"/" "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            sed -i -r "s/^guestos = .*$/guestos = \"other4xlinux-64\"/" "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            sed -i -r "s/^floppy.*$//" "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            sed -i -r "s/^usb.*$//" "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-
-            echo "annotation = \"Built on $(date -I). Source code can be found at https://github.com/skyzyx/vagrant-amazon-linux.\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            echo "floppy0.present = \"FALSE\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            echo "isolation.tools.copy.disable = \"TRUE\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            echo "isolation.tools.dnd.disable = \"TRUE\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            echo "isolation.tools.paste.disable = \"TRUE\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
-            echo "usb.present = \"FALSE\"" >> "${FILENAME%.*}.vmwarevm/${FILENAME%.*}.vagrant.vmx"
+            mv -v "amzn2.vagrant"* "amzn2.vmwarevm/";
+            rm -f "${FILENAME%.*}"{-disk1.vmdk,.ovf,.mf};
         else
             e "SHASUM does NOT match the binary. Cowardly refusing to continue.";
         fi;

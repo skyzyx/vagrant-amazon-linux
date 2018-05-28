@@ -38,17 +38,27 @@ There are a few answers to this:
 
 There are plenty of cases where "native" Docker is perfectly adequate, such as small projects with single-digit developers. But if you have a team of developers that you are supporting, disk I/O is important, or simply want to experiment with Amazon Linux 2 before pusing to production, the Amazon Linux 2 Vagrant box is intended to simplify your life.
 
-## Building a New Vagrant Box
+### What do you install on top of the base image?
 
-All instructions were tested against macOS 10.13 “High Sierra”, VMware Fusion 10, VirtualBox 5.1, and Parallels Desktop 11.
+These images are based on a minimal install of Amazon Linux 2. On top of that base installation, we install the following:
 
-### Prerequisites
+* TBD
 
-* For macOS:
+## Prerequisites
 
-  ```bash
-  brew install openssl cdrtools gpg
-  ```
+* [Packer](https://www.packer.io/downloads.html) 1.2.3 or newer.
+* [VirtualBox](https://www.virtualbox.org/wiki/Downloads), for building the VirtualBox Vagrant box.
+  * [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plug-in to keep VirtualBox tools up-to-date.
+* [VMware Fusion](http://www.vmware.com/products/fusion), for building the VMware Vagrant box.
+  * [Vagrant Provider for VMware](https://www.vagrantup.com/docs/vmware/installation.html) plug-in to enable Vagrant to use VMware as a provider.
+* [Parallels Desktop](http://www.parallels.com/products/desktop/download/), for building the Parallels Vagrant box.
+  * [Parallels Virtualization SDK for Mac](http://www.parallels.com/download/pvsdk/) so that your Mac can talk to Parallels through Vagrant.
+  * [vagrant-parallels](http://parallels.github.io/vagrant-parallels/) plug-in to enable Vagrant to use Parallels as a provider.
+* [vagrant-cachier](http://fgrehm.viewdocs.io/vagrant-cachier/) plug-in to enable caching of `yum` packages.
+* [vagrant-hostsupdater](https://github.com/cogitatio/vagrant-hostsupdater) plug-in to automatically updated your hosts file.
+* `openssl`
+* `cdrtools`
+* `gpg`
 
 ### Prerequisites for VMware (skip if building a different box)
 
@@ -58,11 +68,9 @@ If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), 
 
 1. After installation, you may need to add `ovftool` to your `$PATH`.
 
-    * For macOS:
-
-      ```bash
-      export PATH="/Applications/VMware OVF Tool":$PATH
-      ```
+   ```bash
+   export PATH="/Applications/VMware OVF Tool":$PATH
+   ```
 
 1. From the root of the repository, run `fetch-vmware-image.sh`.
 
@@ -70,6 +78,53 @@ If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), 
    ./fetch-vmware-image.sh
    ```
 
+## Updating your Plug-Ins
+
+This is simply a good thing to do from time to time.
+
+```bash
+vagrant plugin update
+```
+
+## Installing Packer
+
+I'm going to assume that you have already:
+
+1. Installed Vagrant and its dependencies.
+1. Installed (and paid for) the virtualization software of your choice.
+
+You have two choices for installing Packer.
+
+1. If you already have the [Homebrew](http://brew.sh) package manager installed, you can simply do:
+
+ ```bash
+ brew install packer
+ ```
+
+1. Otherwise, you can manually install it from <https://www.packer.io/downloads.html>.
+
+See “[Install Packer](https://www.packer.io/intro/getting-started/setup.html)” for more information.
+
+## Building Vagrant Boxes
+
+### Build everything
+
+This template has built-in support for VMware. You can build everything at the same time (assuming you have the relevant prerequisites installed) with:
+
+```bash
+packer build template.json
+```
+
+### Build only one
+
+If you only want to build one particular Vagrant box, you can use the `--only` flag.
+
+```bash
+# VMware
+packer build --only=vmware-vmx template.json
+```
+
   [al2]: https://aws.amazon.com/amazon-linux-2/
+  [cloud-init]: https://cloudinit.readthedocs.io
   [docker-mac]: https://www.docker.com/docker-mac
   [docker-win]: https://www.docker.com/docker-windows
