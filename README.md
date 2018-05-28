@@ -42,7 +42,15 @@ There are plenty of cases where "native" Docker is perfectly adequate, such as s
 
 All instructions were tested against macOS 10.13 “High Sierra”, VMware Fusion 10, VirtualBox 5.1, and Parallels Desktop 11.
 
-### Prerequisites for VMware
+### Prerequisites
+
+* For macOS:
+
+  ```bash
+  brew install openssl cdrtools gpg
+  ```
+
+### Prerequisites for VMware (skip if building a different box)
 
 If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), you need to follow these steps first.
 
@@ -56,17 +64,11 @@ If you are _building_ a Vagrant box for VMware Desktop (Fusion or Workstation), 
       export PATH="/Applications/VMware OVF Tool":$PATH
       ```
 
-    * For Windows:
+1. From the root of the repository, run `fetch-vmware-image.sh`.
 
-      ```bash
-      # TBD
-      ```
-
-    * For Linux:
-
-      ```bash
-      # TBD
-      ```
+   ```bash
+   ./fetch-vmware-image.sh
+   ```
 
   [al2]: https://aws.amazon.com/amazon-linux-2/
   [docker-mac]: https://www.docker.com/docker-mac
