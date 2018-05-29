@@ -1,0 +1,93 @@
+# https://github.com/RomaniukVadim/wargaming-challenges/blob/master/RootMe/forensic/find_the_cat.txt
+# https://major.io/2010/12/14/mounting-a-raw-partition-file-made-with-dd-or-dd_rescue-in-linux/
+# https://www.turnkeylinux.org/blog/convert-vm-iso
+# https://www.centos.org/docs/5/html/5.1/Installation_Guide/s2-steps-make-cd.html
+# https://kognitio.com/blog/making-amazon-machine-image/
+
+wget http://s3.ryanparman.com.s3.amazonaws.com/VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle
+chmod +x VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle
+./VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle
+
+yum install qemu-kvm isomd5sum genisoimage squashfs-tools syslinux
+~/vagrant-amazon-linux/packer_cache/amzn2.vmwarevm
+qemu-img convert -f vmdk amzn2.vagrant-disk1.vmdk -O raw amzn2.vagrant-disk1.raw
+file ~/vagrant-amazon-linux/packer_cache/amzn2.vmwarevm/amzn2.vagrant-disk1.raw
+
+wget https://github.com/sleuthkit/sleuthkit/releases/download/sleuthkit-4.6.1/sleuthkit-4.6.1.tar.gz
+tar zxvf sleuthkit-4.6.1.tar.gz
+cd sleuthkit-4.6.1
+yum grouplist
+yum -y groupinstall "Development tools"
+yum -y groupinstall "Development Libraries"
+./configure
+make && make install
+
+curl -LO https://cfhcable.dl.sourceforge.net/project/cdrtools/alpha/cdrtools-3.02a09.tar.gz
+tar zxvf cdrtools-3.02a09.tar.gz
+cd cdrtools-3.02
+make && make install
+alternatives --remove genisoimage /usr/bin/mkisofs
+alternatives --install /usr/bin/mkisofs mkisofs /opt/schily/bin/mkisofs 1000
+
+row=$(mmls ~/vagrant-amazon-linux/packer_cache/amzn2.vmwarevm/amzn2.vagrant-disk1.raw | grep "Linux")
+offset=$(echo $row | awk '{print $3}' | bc -l)
+length=$(echo $row | awk '{print $5}' | bc -l)
+dd if=~/vagrant-amazon-linux/packer_cache/amzn2.vmwarevm/amzn2.vagrant-disk1.raw of=~/amzn2.vagrant-disk1.raw bs=512 skip=$offset count=$length
+
+file amzn2.vagrant*
+losetup -f ~/amzn2.vagrant-disk1.raw
+
+mkdir -p /mnt/turnkey-core
+mount -o ro,loop ~/amzn2.vagrant-disk1.raw /mnt/turnkey-core
+rsync -a -t -r -S -I /mnt/turnkey-core/ ~/turnkey-core.rootfs
+umount -d /mnt/turnkey-core
+
+cat << EOF > ~/turnkey-core.rootfs/etc/fstab
+aufs / aufs rw 0 0
+tmpfs /tmp tmpfs nosuid,nodev 0 0
+EOF
+
+losetup /dev/loop0 amzn2.vagrant-disk1.raw
+cp /etc/resolv.conf ~/turnkey-core.rootfs/etc/resolv.conf
+
+chroot ~/turnkey-core.rootfs env -i \
+    TERM=$TERM \
+    HOME=$HOME \
+    PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/bin:/usr/sbin \
+    /bin/sh -c "/bin/bash"
+
+# Do stuff.
+yum -y update
+
+mkdir -p ~/turnkey-core.rootfs/boot/isolinux
+cp -v /usr/share/syslinux/isolinux.bin ~/turnkey-core.rootfs/boot/isolinux/isolinux.bin
+
+
+######################################
+# This part is broken.
+######################################
+cat << EOF > ~/turnkey-core.rootfs/boot/isolinux/isolinux.cfg
+timeout 10
+
+label linux
+  menu label ^Install Amazon Linux 2
+  kernel vmlinuz-4.14.33-59.37.amzn2.x86_64
+  append initrd=initrd-plymouth.img inst.stage2=hd:LABEL=amzn2 quiet
+EOF
+
+cp -v *4.14.42-61* isolinux/
+cp -v .*4.14.42-61* isolinux/
+cp -v initrd-plymouth.img isolinux/
+
+mkisofs \
+    -r -T -J \
+    -V "amzn2" \
+    -input-charset "utf-8" \
+    -b boot/isolinux/isolinux.bin \
+    -c boot/isolinux/boot.cat \
+    -no-emul-boot \
+    -boot-load-size 4 \
+    -boot-info-table \
+    -o ~/amzn2.iso \
+    ~/turnkey-core.rootfs/ \
+;
